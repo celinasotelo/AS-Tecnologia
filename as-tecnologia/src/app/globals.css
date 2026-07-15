@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===== Paleta AS Tecnología ===== */
+  /* Azul principal (logo circular) */
+  --color-primary: #1e3d9e;
+  /* Azul marino profundo (logo cuadrado) */
+  --color-primary-dark: #0d2a4d;
+  /* Azul más claro para hovers y acentos */
+  --color-primary-light: #3b5fd9;
+
+  /* Fondos (estética oscura, como la referencia) */
+  --color-surface: #0a0e1a;        /* fondo general, casi negro azulado */
+  --color-surface-card: #131a2e;   /* cards de producto */
+  --color-surface-elevated: #1b2440; /* hovers, dropdowns */
+
+  /* Textos */
+  --color-foreground: #f5f7fb;     /* texto principal, blanco suave */
+  --color-muted: #8b95b3;          /* texto secundario (modelos, detalles) */
+
+  /* Estados */
+  --color-success: #22c55e;        /* "en stock" */
+  --color-danger: #ef4444;         /* "sin stock", errores */
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-foreground);
+}
