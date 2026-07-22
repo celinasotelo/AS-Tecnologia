@@ -1,23 +1,32 @@
-import { createClient } from "@/lib/supabase/server";
+import { getActiveProducts } from "@/lib/queries/products";
+import { ProductGrid } from "@/components/catalog/product-grid";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const { data: categories, error } = await supabase
-    .from("categories")
-    .select("*");
-
-  if (error) {
-    return <p>Error: {error.message}</p>;
-  }
+  const { data: products, error } = await getActiveProducts();
 
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">AS Tecnología</h1>
-      <ul className="mt-4">
-        {categories.map((cat) => (
-          <li key={cat.id}>{cat.name}</li>
-        ))}
-      </ul>
+    <main className="mx-auto max-w-6xl px-4 py-8">
+      {/* Hero mínimo */}
+      <section className="py-6 text-center sm:py-10">
+        <h1 className="text-3xl font-bold sm:text-4xl">
+          AS <span className="text-primary-light">Tecnología</span>
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-muted">
+          Vapers, perfumes y más. Corrientes, Argentina.
+        </p>
+      </section>
+
+      {/* Catálogo */}
+      <section className="mt-4">
+        <h2 className="text-xl font-bold">Catálogo</h2>
+        <div className="mt-6">
+          {error ? (
+            <p className="text-danger">Error al cargar productos.</p>
+          ) : (
+            <ProductGrid products={products} />
+          )}
+        </div>
+      </section>
     </main>
   );
 }
