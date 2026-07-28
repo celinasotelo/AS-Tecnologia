@@ -44,6 +44,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
       </nav>
 
       <ProductDetail
+        productId={product.id}
         name={product.name}
         brand={product.brands?.name ?? null}
         puffs={puffs ?? null}

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
+import { CartIcon } from "@/components/cart/cart-icon";
 
 export function Header() {
   return (
@@ -29,17 +30,7 @@ export function Header() {
             Productos
           </Link>
         </nav>
-
-        {/* Carrito (placeholder, se conecta en Fase 3) */}
-        <button
-          aria-label="Mi carrito"
-          className="relative rounded-lg p-2 hover:bg-surface-elevated"
-        >
-          <ShoppingCart size={22} />
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold">
-            0
-          </span>
-        </button>
+        <CartIcon />
       </div>
     </header>
   );

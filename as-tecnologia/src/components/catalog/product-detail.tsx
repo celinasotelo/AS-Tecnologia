@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/format";
+import { useCart } from "@/lib/store/cart";
 
 type Variant = {
   id: string;
@@ -20,6 +21,7 @@ type ProductImage = {
 };
 
 type ProductDetailProps = {
+  productId: string;
   name: string;
   brand: string | null;
   puffs: number | null;
@@ -30,6 +32,7 @@ type ProductDetailProps = {
 };
 
 export function ProductDetail({
+  productId,
   name,
   brand,
   puffs,
@@ -40,6 +43,7 @@ export function ProductDetail({
 }: ProductDetailProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const addItem = useCart((state) => state.addItem);
 
   const sortedImages = [...images].sort((a, b) => a.sort_order - b.sort_order);
   const selected = variants.find((v) => v.id === selectedId) ?? null;
@@ -77,7 +81,7 @@ export function ProductDetail({
               fill
               sizes="(min-width: 768px) 50vw, 100vw"
               className="object-contain"
-              preload
+              priority
             />
           ) : (
             <div className="flex h-full items-center justify-center">
@@ -189,8 +193,19 @@ export function ProductDetail({
           )}
         </div>
 
-        {/* Agregar al carrito (placeholder hasta Fase 3) */}
+        {/* Agregar al carrito */}
         <button
+          onClick={() => {
+            if (!selected) return;
+            addItem({
+              variantId: selected.id,
+              productId,
+              productName: name,
+              variantName: selected.name,
+              price,
+              imageUrl: currentImage?.url ?? null,
+            });
+          }}
           disabled={!selected || selected.stock === 0}
           className="rounded-xl bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
         >
