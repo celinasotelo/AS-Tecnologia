@@ -3,8 +3,11 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import { X, Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
-import { useCart, selectCartTotal } from "@/lib/store/cart";
 import { formatPrice } from "@/lib/format";
+import { useState } from "react";
+import { useCart, selectCartTotal } from "@/lib/store/cart";
+import { createOrder } from "@/lib/actions/orders";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 export function CartDrawer() {
   const isOpen = useCart((state) => state.isOpen);
@@ -13,6 +16,46 @@ export function CartDrawer() {
   const updateQuantity = useCart((state) => state.updateQuantity);
   const removeItem = useCart((state) => state.removeItem);
   const total = useCart(selectCartTotal);
+  const clear = useCart((state) => state.clear);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCheckout = async () => {
+    setError(null);
+
+    if (!name.trim() || !phone.trim()) {
+      setError("Completá tu nombre y teléfono.");
+      return;
+    }
+
+    setLoading(true);
+
+    const result = await createOrder({
+      customerName: name.trim(),
+      customerPhone: phone.trim(),
+      items: items.map((i) => ({
+        variantId: i.variantId,
+        quantity: i.quantity,
+      })),
+    });
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    // La orden ya está guardada. Ahora sí, abrir WhatsApp.
+    const link = buildWhatsAppLink(result.orderId, items, result.total, name.trim());
+    window.open(link, "_blank");
+
+    // Limpiar el carrito y cerrar
+    clear();
+    closeCart();
+  };
 
   // Cerrar con la tecla Escape
   useEffect(() => {
@@ -133,16 +176,39 @@ export function CartDrawer() {
               </ul>
             </div>
 
-            {/* Footer con total y checkout */}
+            {/* Footer con total, formulario y checkout */}
             <div className="border-t border-surface-elevated p-4">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-muted">Total</span>
                 <span className="text-xl font-bold">{formatPrice(total)}</span>
               </div>
+
+              {/* Formulario mínimo */}
+              <div className="mb-3 flex flex-col gap-2">
+                <input
+                  type="text"
+                  placeholder="Tu nombre"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="rounded-lg border border-surface-elevated bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                <input
+                  type="tel"
+                  placeholder="Tu teléfono"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="rounded-lg border border-surface-elevated bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </div>
+
+              {error && <p className="mb-2 text-sm text-danger">{error}</p>}
+
               <button
-                className="w-full rounded-xl bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary-light"
+                onClick={handleCheckout}
+                disabled={loading}
+                className="w-full rounded-xl bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary-light disabled:opacity-50"
               >
-                Finalizar compra por WhatsApp
+                {loading ? "Procesando..." : "Finalizar compra por WhatsApp"}
               </button>
             </div>
           </>
