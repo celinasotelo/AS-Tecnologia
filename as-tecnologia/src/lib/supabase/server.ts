@@ -19,8 +19,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Ignorado: un Server Component no puede escribir cookies,
-            // solo leerlas.
+
           }
         },
       },
