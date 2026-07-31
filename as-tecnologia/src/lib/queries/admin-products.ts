@@ -1,13 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 
-export async function getActiveProducts() {
+export async function getAllProductsForAdmin() {
   const supabase = await createClient();
 
   return supabase
     .from("products")
     .select(
-      "id, name, base_price, brands(name), product_variants(stock), product_images(url, sort_order)"
+      `id, name, model, base_price, is_active,
+       brands(name),
+       product_variants(id, name, stock, is_active)`
     )
-    .eq("is_active", true)
     .order("created_at", { ascending: false });
 }
