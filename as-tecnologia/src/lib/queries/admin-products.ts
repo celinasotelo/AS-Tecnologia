@@ -12,3 +12,17 @@ export async function getAllProductsForAdmin() {
     )
     .order("created_at", { ascending: false });
 }
+
+export async function getBrandsAndCategories() {
+  const supabase = await createClient();
+
+  const [brands, categories] = await Promise.all([
+    supabase.from("brands").select("id, name").order("name"),
+    supabase.from("categories").select("id, name").order("name"),
+  ]);
+
+  return {
+    brands: brands.data ?? [],
+    categories: categories.data ?? [],
+  };
+}
