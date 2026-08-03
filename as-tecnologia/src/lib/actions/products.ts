@@ -81,3 +81,76 @@ export async function saveProduct(input: {
 
   return { ok: true };
 }
+
+// Actualizar una variante (stock, nombre, precio)
+export async function updateVariant(input: {
+  id: string;
+  name: string;
+  stock: number;
+  priceOverride: number | null;
+}) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("product_variants")
+    .update({
+      name: input.name.trim(),
+      stock: input.stock,
+      price_override: input.priceOverride,
+    })
+    .eq("id", input.id);
+
+  if (error) {
+    return { ok: false, error: "No se pudo actualizar la variante." };
+  }
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/productos");
+  return { ok: true };
+}
+
+// Agregar una variante nueva a un producto
+export async function addVariant(input: {
+  productId: string;
+  name: string;
+  stock: number;
+}) {
+  const supabase = await createClient();
+
+  if (!input.name.trim()) {
+    return { ok: false, error: "La variante necesita un nombre." };
+  }
+
+  const { error } = await supabase.from("product_variants").insert({
+    product_id: input.productId,
+    name: input.name.trim(),
+    stock: input.stock,
+  });
+
+  if (error) {
+    return { ok: false, error: "No se pudo agregar la variante." };
+  }
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/productos");
+  return { ok: true };
+}
+
+// Eliminar/Desactivar una variante
+export async function deleteVariant(id: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("product_variants")
+    .update({ is_active: false })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error al desactivar variante:", error);
+    return { ok: false, error: "No se pudo eliminar la variante." };
+  }
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/productos");
+  return { ok: true };
+}

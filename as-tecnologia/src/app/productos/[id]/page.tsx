@@ -20,6 +20,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
        product_images(url, sort_order, variant_id)`
     )
     .eq("id", id)
+    .eq("product_variants.is_active", true)
     .single();
 
   if (!product) {

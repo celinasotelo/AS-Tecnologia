@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { formatPrice } from "@/lib/format";
 import { toggleProductActive } from "@/lib/actions/products";
+import Link from "next/link";
 
 type Variant = {
   id: string;
@@ -76,6 +77,12 @@ export function ProductAdminRow({ product }: { product: Product }) {
               ? "Desactivar"
               : "Activar"}
           </button>
+          <Link
+            href={`/admin/productos/${product.id}/editar`}
+            className="rounded-lg bg-surface-elevated px-3 py-1.5 text-sm font-medium hover:bg-primary/20"
+          >
+            Editar
+          </Link>
         </div>
       </div>
 

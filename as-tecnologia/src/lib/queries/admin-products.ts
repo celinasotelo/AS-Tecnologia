@@ -26,3 +26,16 @@ export async function getBrandsAndCategories() {
     categories: categories.data ?? [],
   };
 }
+
+export async function getProductForEdit(id: string) {
+  const supabase = await createClient();
+
+  return supabase
+    .from("products")
+    .select(
+      `id, name, model, description, base_price, category_id, brand_id, attributes,
+       product_variants(id, name, price_override, stock, is_active)`
+    )
+    .eq("id", id)
+    .single();
+}
