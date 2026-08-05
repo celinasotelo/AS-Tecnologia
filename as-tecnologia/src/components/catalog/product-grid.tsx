@@ -5,15 +5,16 @@ type Product = ComponentProps<typeof ProductCard>["product"];
 
 type ProductGridProps = {
   products: Product[];
+  // Texto para la grilla vacía. El listado usa el default; la búsqueda manda el suyo.
+  emptyMessage?: string;
 };
 
-export function ProductGrid({ products }: ProductGridProps) {
+export function ProductGrid({
+  products,
+  emptyMessage = "No hay productos disponibles por el momento.",
+}: ProductGridProps) {
   if (products.length === 0) {
-    return (
-      <p className="py-12 text-center text-muted">
-        No hay productos disponibles por el momento.
-      </p>
-    );
+    return <p className="py-12 text-center text-muted">{emptyMessage}</p>;
   }
 
   return (
