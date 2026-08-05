@@ -34,7 +34,8 @@ export async function getProductForEdit(id: string) {
     .from("products")
     .select(
       `id, name, model, description, base_price, category_id, brand_id, attributes,
-       product_variants(id, name, price_override, stock, is_active)`
+       product_variants(id, name, price_override, stock, is_active),
+       product_images(id, url, sort_order, variant_id)`
     )
     .eq("id", id)
     .single();

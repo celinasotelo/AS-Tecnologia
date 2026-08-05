@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
-import {
-  getProductForEdit,
-  getBrandsAndCategories,
-} from "@/lib/queries/admin-products";
+import {getProductForEdit, getBrandsAndCategories} from "@/lib/queries/admin-products";
 import { ProductForm } from "@/components/admin/product-form";
 import { VariantManager } from "@/components/admin/variant-manager";
+import { ImageManager } from "@/components/admin/image-manager";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -43,6 +41,12 @@ export default async function EditarProductoPage({ params }: PageProps) {
 
       <VariantManager
         productId={product.id}
+        variants={product.product_variants}
+      />
+
+      <ImageManager
+        productId={product.id}
+        images={product.product_images}
         variants={product.product_variants}
       />
     </div>
