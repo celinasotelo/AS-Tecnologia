@@ -1,5 +1,6 @@
 import { getActiveProducts } from "@/lib/queries/products";
 import { ProductGrid } from "@/components/catalog/product-grid";
+import Link from "next/link";
 
 export default async function Home() {
   const { data: products, error } = await getActiveProducts();

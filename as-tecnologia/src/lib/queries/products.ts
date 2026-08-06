@@ -1,13 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 
-type CategoryFilter = { slug: string } | { excludeSlug: string };
+export type ProductFilters = {
+  categoria?: string;        // slug de categoría: "vapers"
+  excludeCategoria?: string; // todo MENOS esta categoría (nav mobile "otros")
+  marca?: string;            // slug de marca: "elf-bar"
+  puffs?: number;            // puffs mínimos: 30000
+  sabor?: string;            // texto a buscar en nombres de variantes
+};
 
-// Columnas que necesita ProductCard. Compartidas entre el listado y la búsqueda
-// para que ambas devuelvan exactamente la misma forma de datos.
 const PRODUCT_CARD_SELECT =
-  "id, name, base_price, brands(name), categories!inner(slug), product_variants!inner(stock, is_active), product_images(url, sort_order)";
+  "id, name, base_price, brands!inner(name, slug), categories!inner(slug), product_variants!inner(stock, name, is_active), product_images(url, sort_order)";
 
-export async function getActiveProducts(filter?: CategoryFilter) {
+export async function getActiveProducts(filters: ProductFilters = {}) {
   const supabase = await createClient();
 
   let query = supabase
@@ -18,10 +22,22 @@ export async function getActiveProducts(filter?: CategoryFilter) {
     .gt("product_variants.stock", 0)
     .order("created_at", { ascending: false });
 
-  if (filter && "slug" in filter) {
-    query = query.eq("categories.slug", filter.slug);
-  } else if (filter && "excludeSlug" in filter) {
-    query = query.neq("categories.slug", filter.excludeSlug);
+  if (filters.categoria) {
+    query = query.eq("categories.slug", filters.categoria);
+  } else if (filters.excludeCategoria) {
+    query = query.neq("categories.slug", filters.excludeCategoria);
+  }
+
+  if (filters.marca) {
+    query = query.eq("brands.slug", filters.marca);
+  }
+
+  if (filters.puffs) {
+    query = query.gte("attributes->>puffs", filters.puffs);
+  }
+
+  if (filters.sabor) {
+    query = query.ilike("product_variants.name", `%${filters.sabor}%`);
   }
 
   return query;
@@ -30,8 +46,6 @@ export async function getActiveProducts(filter?: CategoryFilter) {
 export async function searchActiveProducts(term: string) {
   const supabase = await createClient();
 
-  // PostgREST arma el .or() como texto: las comas, paréntesis y comodines del
-  // usuario romperían la sintaxis del filtro, así que los saco antes.
   const safeTerm = term.replace(/[,()%_*\\]/g, " ").trim();
 
   if (!safeTerm) {
@@ -51,4 +65,13 @@ export async function searchActiveProducts(term: string) {
     )
     .order("name")
     .limit(48);
+}
+
+export async function getBrandsForFilter() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("brands")
+    .select("name, slug")
+    .order("name");
+  return data ?? [];
 }
