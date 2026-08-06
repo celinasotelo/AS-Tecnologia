@@ -14,10 +14,12 @@ const PUFFS_OPTIONS = [
 
 export function FilterBar({
   brands,
-  showPuffs,
+  showPuffs = true,
+  showSabor = true,
 }: {
   brands: Brand[];
-  showPuffs: boolean;
+  showPuffs?: boolean;
+  showSabor?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -36,8 +38,8 @@ export function FilterBar({
 
   const hasFilters =
     searchParams.get("marca") ||
-    searchParams.get("puffs") ||
-    searchParams.get("sabor");
+    (showPuffs && searchParams.get("puffs")) ||
+    (showSabor && searchParams.get("sabor"));
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -70,18 +72,20 @@ export function FilterBar({
         </select>
       )}
 
-      {/* Sabor */}
-      <input
-        type="search"
-        placeholder="Buscar sabor..."
-        defaultValue={searchParams.get("sabor") ?? ""}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            setFilter("sabor", e.currentTarget.value);
-          }
-        }}
-        className="rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary"
-      />
+      {/* Sabor (solo tiene sentido donde las variantes son sabores) */}
+      {showSabor && (
+        <input
+          type="search"
+          placeholder="Buscar sabor..."
+          defaultValue={searchParams.get("sabor") ?? ""}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setFilter("sabor", e.currentTarget.value);
+            }
+          }}
+          className="rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      )}
 
       {hasFilters && (
         <button

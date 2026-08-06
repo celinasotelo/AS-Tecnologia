@@ -67,11 +67,41 @@ export async function searchActiveProducts(term: string) {
     .limit(48);
 }
 
-export async function getBrandsForFilter() {
+// Marcas para el <select> del FilterBar. Solo devuelve marcas que tienen al
+// menos un producto comprable en la categoría de la página, así el desplegable
+// nunca ofrece una opción que deja la grilla vacía.
+export async function getBrandsForFilter(
+  filters: Pick<ProductFilters, "categoria" | "excludeCategoria"> = {}
+) {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("brands")
-    .select("name, slug")
-    .order("name");
-  return data ?? [];
+
+  // Mismas condiciones que getActiveProducts: si un producto no entra en la
+  // grilla, su marca tampoco tiene por qué estar en el filtro.
+  let query = supabase
+    .from("products")
+    .select(
+      "brands!inner(name, slug), categories!inner(slug), product_variants!inner(stock, is_active)"
+    )
+    .eq("is_active", true)
+    .eq("product_variants.is_active", true)
+    .gt("product_variants.stock", 0);
+
+  if (filters.categoria) {
+    query = query.eq("categories.slug", filters.categoria);
+  } else if (filters.excludeCategoria) {
+    query = query.neq("categories.slug", filters.excludeCategoria);
+  }
+
+  const { data } = await query;
+  if (!data) return [];
+
+  // Un producto por fila, pero varios productos comparten marca: deduplicamos.
+  const unique = new Map<string, { name: string; slug: string }>();
+  for (const row of data) {
+    if (row.brands) {
+      unique.set(row.brands.slug, row.brands);
+    }
+  }
+
+  return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
 }

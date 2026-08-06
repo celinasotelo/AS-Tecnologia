@@ -6,36 +6,34 @@ type PageProps = {
   searchParams: Promise<{
     categoria?: string;
     marca?: string;
-    puffs?: string;
-    sabor?: string;
   }>;
 };
 
 export default async function ProductosPage({ searchParams }: PageProps) {
   const params = await searchParams;
 
+  // Sin ?categoria= esta página es "todo menos vapers". La grilla y el filtro de
+  // marcas comparten el mismo recorte para que no se desincronicen.
+  const categoryFilter = {
+    categoria: params.categoria,
+    excludeCategoria: params.categoria ? undefined : "vapers",
+  };
+
   const [{ data: products, error }, brands] = await Promise.all([
-    getActiveProducts({
-      categoria: params.categoria,
-      marca: params.marca,
-      puffs: params.puffs ? Number(params.puffs) : undefined,
-      sabor: params.sabor,
-    }),
-    getBrandsForFilter(),
+    getActiveProducts({ ...categoryFilter, marca: params.marca }),
+    getBrandsForFilter(categoryFilter),
   ]);
 
   if (error) {
     return <p className="p-8 text-danger">Error al cargar productos.</p>;
   }
 
-  // Puffs solo aplica a vapers (o cuando no hay categoría elegida)
-  const showPuffs = !params.categoria || params.categoria === "vapers";
-
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-2xl font-bold">Productos</h1>
       <div className="mt-4">
-        <FilterBar brands={brands} showPuffs={showPuffs} />
+        {/* Acá solo filtramos por marca: puffs y sabor son cosa de vapers */}
+        <FilterBar brands={brands} showPuffs={false} showSabor={false} />
       </div>
       <div className="mt-6">
         <ProductGrid products={products ?? []} />
