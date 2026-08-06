@@ -17,7 +17,7 @@ type ProductFormProps = {
     description: string | null;
     base_price: number;
     category_id: string;
-    brand_id: string;
+    brandName: string;
     puffs: number | null;
   };
 };
@@ -33,7 +33,7 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
   const [description, setDescription] = useState(initial?.description ?? "");
   const [basePrice, setBasePrice] = useState(initial?.base_price?.toString() ?? "");
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? "");
-  const [brandId, setBrandId] = useState(initial?.brand_id ?? "");
+  const [brandName, setBrandName] = useState(initial?.brandName ?? "");
   const [puffs, setPuffs] = useState(initial?.puffs?.toString() ?? "");
 
   const handleSubmit = () => {
@@ -46,7 +46,7 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
         description,
         basePrice: Number(basePrice) || 0,
         categoryId,
-        brandId,
+        brandName,
         puffs: puffs ? Number(puffs) : null,
       });
 
@@ -76,18 +76,18 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Marca">
-            <select
-              value={brandId}
-              onChange={(e) => setBrandId(e.target.value)}
+            <input
+              list="brands-list"
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
               className={inputClass}
-            >
-              <option value="">Elegí una marca</option>
+              placeholder="Escribí o elegí una marca"
+            />
+            <datalist id="brands-list">
               {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
+                <option key={b.id} value={b.name} />
               ))}
-            </select>
+            </datalist>
           </Field>
 
           <Field label="Categoría">

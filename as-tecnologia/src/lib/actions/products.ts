@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { slugify } from "@/lib/slug";
 
 export async function toggleProductActive(
   productId: string,
@@ -34,13 +35,18 @@ export async function saveProduct(input: {
   description: string;
   basePrice: number;
   categoryId: string;
-  brandId: string;
+  brandName: string;
   puffs: number | null;
 }) {
   const supabase = await createClient();
 
-  if (!input.name.trim() || !input.categoryId || !input.brandId) {
+  if (!input.name.trim() || !input.categoryId || !input.brandName.trim()) {
     return { ok: false, error: "Completá nombre, categoría y marca." };
+  }
+
+  const brandResult = await findOrCreateBrandId(supabase, input.brandName);
+  if ("error" in brandResult) {
+    return { ok: false, error: brandResult.error };
   }
 
   // attributes: guardamos puffs solo si viene (para vapers)
@@ -52,7 +58,7 @@ export async function saveProduct(input: {
     description: input.description.trim() || null,
     base_price: input.basePrice,
     category_id: input.categoryId,
-    brand_id: input.brandId,
+    brand_id: brandResult.id,
     attributes,
   };
 
@@ -153,4 +159,45 @@ export async function deleteVariant(id: string) {
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   return { ok: true };
+}
+
+async function findOrCreateBrandId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rawName: string
+): Promise<{ id: string } | { error: string }> {
+  const name = rawName.trim();
+  if (!name) return { error: "La marca no puede estar vacía." };
+
+  // 1. Si existe una marca con ese nombre
+  const { data: existing } = await supabase
+    .from("brands")
+    .select("id")
+    .ilike("name", name)
+    .maybeSingle();
+
+  if (existing) return { id: existing.id };
+
+  // 2. No existe
+  const slug = slugify(name);
+  const { data: created, error } = await supabase
+    .from("brands")
+    .insert({ name, slug })
+    .select("id")
+    .single();
+
+  if (!error && created) return { id: created.id };
+
+  // 3. Caso borde: el slug quedó duplicado (ej. "Elf Bar" y "elf-bar" ya
+  // existía con otro casing). Buscamos por slug antes de rendirnos.
+  if (error?.code === "23505") {
+    const { data: bySlug } = await supabase
+      .from("brands")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (bySlug) return { id: bySlug.id };
+  }
+
+  console.error("Error al crear marca:", error);
+  return { error: "No se pudo crear la marca." };
 }

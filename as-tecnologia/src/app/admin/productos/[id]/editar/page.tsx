@@ -34,7 +34,7 @@ export default async function EditarProductoPage({ params }: PageProps) {
           description: product.description,
           base_price: product.base_price,
           category_id: product.category_id,
-          brand_id: product.brand_id,
+          brandName: product.brands?.name ?? "",
           puffs,
         }}
       />
