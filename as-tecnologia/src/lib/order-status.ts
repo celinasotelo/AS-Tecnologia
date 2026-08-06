@@ -1,7 +1,13 @@
+export type OrderStatus =
+  | "pending_whatsapp"
+  | "confirmed"
+  | "delivered"
+  | "cancelled";
+
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   pending_whatsapp: "Pendiente",
   confirmed: "Confirmada",
-  delivered: "Entregada",
+  delivered: "Finalizada",
   cancelled: "Cancelada",
 };
 

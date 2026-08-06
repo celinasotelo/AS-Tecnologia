@@ -1,5 +1,9 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import { formatPrice } from "@/lib/format";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_STYLES } from "@/lib/order-status";
+import { finalizeOrder, cancelOrder } from "@/lib/actions/orders";
 
 type OrderItem = {
   quantity: number;
@@ -21,6 +25,10 @@ type Order = {
 };
 
 export function OrderRow({ order }: { order: Order }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const isEditable = order.status === "pending_whatsapp";
+
   const date = new Date(order.created_at).toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "2-digit",
@@ -28,6 +36,33 @@ export function OrderRow({ order }: { order: Order }) {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const handleFinalize = () => {
+    if (
+      !confirm(
+        `¿Finalizar la orden de ${order.customer_name}? Se va a descontar el stock de los productos.`
+      )
+    )
+      return;
+    setError(null);
+    startTransition(async () => {
+      const result = await finalizeOrder(order.id);
+      if (!result.ok) {
+        setError(result.error);
+      }
+    });
+  };
+
+  const handleCancel = () => {
+    if (!confirm(`¿Cancelar la orden de ${order.customer_name}?`)) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await cancelOrder(order.id);
+      if (!result.ok) {
+        setError(result.error);
+      }
+    });
+  };
 
   return (
     <div className="rounded-xl bg-surface-card p-4">
@@ -68,6 +103,28 @@ export function OrderRow({ order }: { order: Order }) {
         <span>Total</span>
         <span>{formatPrice(order.total)}</span>
       </div>
+
+      {/* Acciones: solo mientras la orden sigue pendiente */}
+      {isEditable && (
+        <div className="mt-3 flex items-center gap-2 border-t border-surface-elevated pt-3">
+          <button
+            onClick={handleFinalize}
+            disabled={isPending}
+            className="rounded-md bg-success/20 px-3 py-1.5 text-sm font-medium text-success transition hover:bg-success/30 disabled:opacity-50"
+          >
+            {isPending ? "..." : "Finalizar"}
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={isPending}
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-muted transition hover:text-danger disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   );
 }

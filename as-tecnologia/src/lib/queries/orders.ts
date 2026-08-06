@@ -10,5 +10,6 @@ export async function getOrders() {
        order_items(quantity, unit_price,
          product_variants(name, products(name)))`
     )
+    .neq("status", "cancelled")
     .order("created_at", { ascending: false });
 }
