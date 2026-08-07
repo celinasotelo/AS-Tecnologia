@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Estos son los valores del MODO OSCURO (el tema por defecto de la tienda) y
+   además los que Tailwind necesita en build time para generar las clases. */
 @theme {
   /* ===== Paleta AS Tecnología ===== */
   /* Azul principal (logo circular) */
@@ -23,7 +25,59 @@
   --color-danger: #ef4444;         /* "sin stock", errores */
 }
 
+/* ===== Modo claro =====
+   Pisa las mismas variables cuando el <html> tiene data-theme="light".
+   Esto funciona porque usamos @theme y no @theme inline: Tailwind compila
+   bg-surface a var(--color-surface), así que cambiar la variable en runtime
+   cambia todas las clases de una. Si algún día migrás a @theme inline, el
+   valor se incrusta en cada clase y este bloque deja de tener efecto. */
+:root[data-theme="light"] {
+  --color-surface: #f5f7fb;          /* blanco azulado, no blanco puro */
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #dfe5f2; /* bordes y hovers */
+  --color-foreground: #0d2a4d;       /* navy de marca como color de texto */
+  --color-muted: #5a6785;
+
+  /* Los de arriba (#8b95b3 y #22c55e) sobre blanco quedan en ~2.3:1 de
+     contraste, ilegibles. Estos superan 4.5:1. */
+  --color-success: #15803d;
+  --color-danger: #dc2626;
+}
+
+/* El azul de marca (--color-primary y --color-primary-light) NO cambia entre
+   temas: funciona sobre fondo claro y oscuro, por eso los botones azules con
+   texto blanco siguen sirviendo tal cual en los dos modos. */
+
+/* Avisa al navegador de qué tema se trata, para que las barras de scroll y los
+   controles nativos (selects, date pickers) acompañen en vez de quedar claros
+   sobre fondo oscuro. */
+:root {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 body {
   background-color: var(--color-surface);
   color: var(--color-foreground);
+}
+
+/* ===== Elementos que existen por duplicado, uno por tema =====
+   Lo usa el logo del header: se renderizan las dos imágenes y el CSS muestra
+   la que corresponde, sin JavaScript ni parpadeo.
+   El orden importa: .only-light arranca oculto y sólo se muestra en claro. Al
+   revés (ocultar .only-dark bajo [data-theme="dark"]) se verían los dos logos
+   juntos si el atributo llegara a faltar. */
+.only-light {
+  display: none;
+}
+
+:root[data-theme="light"] .only-light {
+  display: block;
+}
+
+:root[data-theme="light"] .only-dark {
+  display: none;
 }

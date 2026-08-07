@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { navLinks } from "@/lib/nav-links";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 // Ya no maneja su propio abierto/cerrado: lo decide HeaderActions, para que
 // nunca quede abierto al mismo tiempo que el buscador.
@@ -38,6 +39,13 @@ export function MobileNav({ open, onToggle, onClose }: MobileNavProps) {
                 {link.label}
               </Link>
             ))}
+
+            {/* No llama a onClose a propósito: cambiar el tema y ver el menú
+                actualizarse en el momento es mejor que perderlo de vista. */}
+            <ThemeToggle
+              showLabel
+              className="mt-1 flex w-full items-center gap-2 border-t border-surface-elevated px-3 py-2 pt-3 text-sm hover:bg-surface-elevated"
+            />
           </nav>
         </div>
       )}

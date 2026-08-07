@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CartIcon } from "@/components/cart/cart-icon";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SearchBar } from "@/components/layout/search-bar";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 // Sólo puede haber un panel abierto a la vez: por eso es un único estado
 // con tres valores posibles, y no dos booleanos independientes.
@@ -78,6 +79,10 @@ export function HeaderActions() {
         onToggle={() => toggle("search")}
         onClose={close}
       />
+
+      {/* En celular no entra un cuarto ícono: ahí el cambio de tema vive adentro
+          del menú hamburguesa (ver MobileNav). */}
+      <ThemeToggle className="hidden h-6 w-6 items-center justify-center md:flex" />
 
       {/* El carrito está dentro del contenedor, así que el click de afuera no lo
           alcanza: cierro a mano para que el drawer no se abra sobre el menú. */}
