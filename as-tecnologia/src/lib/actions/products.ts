@@ -161,6 +161,37 @@ export async function deleteVariant(id: string) {
   return { ok: true };
 }
 
+// Reactivar una variante que había sido desactivada
+export async function restoreVariant(id: string) {
+  const supabase = await createClient();
+
+  // Pedimos la fila de vuelta con .select(): si RLS bloquea el UPDATE,
+  // Supabase no tira error, simplemente no actualiza nada. Sin esto la
+  // pantalla diría "listo" sin haber cambiado la variante.
+  const { data, error } = await supabase
+    .from("product_variants")
+    .update({ is_active: true })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error al reactivar variante:", error);
+    return { ok: false, error: "No se pudo reactivar la variante." };
+  }
+
+  if (!data) {
+    return {
+      ok: false,
+      error: "No se pudo reactivar la variante (revisá los permisos).",
+    };
+  }
+
+  revalidatePath("/admin/productos");
+  revalidatePath("/productos");
+  return { ok: true };
+}
+
 async function findOrCreateBrandId(
   supabase: Awaited<ReturnType<typeof createClient>>,
   rawName: string

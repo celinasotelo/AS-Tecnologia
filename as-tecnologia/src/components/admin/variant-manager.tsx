@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, RotateCcw } from "lucide-react";
 import {
   updateVariant,
   addVariant,
   deleteVariant,
+  restoreVariant,
 } from "@/lib/actions/products";
 
 type Variant = {
@@ -47,6 +48,7 @@ function VariantRow({ variant }: { variant: Variant }) {
   const [name, setName] = useState(variant.name);
   const [stock, setStock] = useState(variant.stock.toString());
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSave = () => {
     setSaved(false);
@@ -71,12 +73,39 @@ function VariantRow({ variant }: { variant: Variant }) {
     });
   };
 
+  const handleRestore = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await restoreVariant(variant.id);
+      if (!result.ok) setError(result.error ?? "No se pudo reactivar.");
+    });
+  };
+
+  // Una variante desactivada no se edita: primero hay que reactivarla.
+  if (!variant.is_active) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-surface-card p-2">
+        <span className="flex-1 px-2 py-1.5 text-sm text-muted line-through">
+          {variant.name}
+        </span>
+        {error && <span className="text-xs text-danger">{error}</span>}
+        <span className="rounded-md bg-surface px-2 py-1 text-xs text-muted">
+          Inactiva
+        </span>
+        <button
+          onClick={handleRestore}
+          disabled={isPending}
+          className="flex items-center gap-1 rounded-md bg-success/20 px-3 py-1.5 text-sm font-medium text-success transition hover:bg-success/30 disabled:opacity-50"
+        >
+          <RotateCcw size={16} />
+          {isPending ? "..." : "Restaurar"}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`flex items-center gap-2 rounded-lg bg-surface-card p-2 ${
-        variant.is_active ? "" : "opacity-50"
-      }`}
-    >
+    <div className="flex items-center gap-2 rounded-lg bg-surface-card p-2">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
