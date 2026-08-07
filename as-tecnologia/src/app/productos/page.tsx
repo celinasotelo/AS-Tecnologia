@@ -30,7 +30,7 @@ export default async function ProductosPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-2xl font-bold">Productos</h1>
+      <h1 className="text-2xl font-bold">Otros Productos</h1>
       <div className="mt-4">
         {/* Acá solo filtramos por marca: puffs y sabor son cosa de vapers */}
         <FilterBar brands={brands} showPuffs={false} showSabor={false} />

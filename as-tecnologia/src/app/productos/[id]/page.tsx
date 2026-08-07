@@ -38,7 +38,7 @@ export default async function ProductoDetallePage({ params }: PageProps) {
         </Link>
         <span>›</span>
         <Link href="/productos" className="hover:text-primary-light">
-          Productos
+          Otros Productos
         </Link>
         <span>›</span>
         <span className="text-foreground">{product.name}</span>
