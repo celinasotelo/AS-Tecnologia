@@ -3,12 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveProduct } from "@/lib/actions/products";
+import { CATEGORIA_VAPERS, usaVariantes } from "@/lib/categorias";
 
 type Option = { id: string; name: string };
+type CategoryOption = Option & { slug: string };
 
 type ProductFormProps = {
   brands: Option[];
-  categories: Option[];
+  categories: CategoryOption[];
   // Si viene, es edición. Si no, alta.
   initial?: {
     id: string;
@@ -19,6 +21,7 @@ type ProductFormProps = {
     category_id: string;
     brandName: string;
     puffs: number | null;
+    stock: number;
   };
 };
 
@@ -35,6 +38,14 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? "");
   const [brandName, setBrandName] = useState(initial?.brandName ?? "");
   const [puffs, setPuffs] = useState(initial?.puffs?.toString() ?? "");
+  const [stock, setStock] = useState(initial?.stock?.toString() ?? "");
+
+  // Derivado de la categoría elegida: cambia solo al mover el <select>.
+  // Vapers y perfumes cargan el stock por variante (sabor / mililitros);
+  // el resto tiene una sola presentación y el stock va acá mismo.
+  const slugActual = categories.find((c) => c.id === categoryId)?.slug;
+  const conVariantes = usaVariantes(slugActual);
+  const esVaper = slugActual === CATEGORIA_VAPERS;
 
   const handleSubmit = () => {
     setError(null);
@@ -48,6 +59,7 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
         categoryId,
         brandName,
         puffs: puffs ? Number(puffs) : null,
+        stock: conVariantes ? null : Number(stock) || 0,
       });
 
       if (result.ok) {
@@ -127,15 +139,36 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
           </Field>
         </div>
 
-        <Field label="Puffs (solo vapers, opcional)">
-          <input
-            type="number"
-            value={puffs}
-            onChange={(e) => setPuffs(e.target.value)}
-            className={inputClass}
-            placeholder="40000"
-          />
-        </Field>
+        {esVaper && (
+          <Field label="Puffs (opcional)">
+            <input
+              type="number"
+              value={puffs}
+              onChange={(e) => setPuffs(e.target.value)}
+              className={inputClass}
+              placeholder="40000"
+            />
+          </Field>
+        )}
+
+        {conVariantes ? (
+          <p className="rounded-lg bg-surface-card px-3 py-2 text-sm text-muted">
+            {initial
+              ? "El stock de esta categoría se carga por variante, en la sección de abajo."
+              : "El stock de esta categoría se carga por variante: vas a poder cargarlo después de crear el producto."}
+          </p>
+        ) : (
+          <Field label="Stock">
+            <input
+              type="number"
+              min={0}
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              className={inputClass}
+              placeholder="5"
+            />
+          </Field>
+        )}
 
         <Field label="Descripción (opcional)">
           <textarea

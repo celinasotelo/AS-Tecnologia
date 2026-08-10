@@ -8,6 +8,7 @@ import {
   deleteVariant,
   restoreVariant,
 } from "@/lib/actions/products";
+import { etiquetasDeVariante } from "@/lib/categorias";
 
 type Variant = {
   id: string;
@@ -19,34 +20,55 @@ type Variant = {
 
 export function VariantManager({
   productId,
+  categorySlug,
   variants,
 }: {
   productId: string;
+  categorySlug: string | null;
   variants: Variant[];
 }) {
+  // Las mismas etiquetas que ve el cliente en la tienda: si acá cargás
+  // "presentaciones", allá se muestran como "Presentación".
+  const etiquetas = etiquetasDeVariante(categorySlug);
+
   return (
     <div>
-      <h2 className="text-xl font-bold">Variantes y stock</h2>
+      <h2 className="text-xl font-bold">Stock por {etiquetas.singular}</h2>
       <p className="mt-1 text-sm text-muted">
-        Editá el stock de cada sabor. Los cambios se guardan por fila.
+        Editá nombre, precio y stock de cada {etiquetas.singular}. Se guarda por
+        fila. Si dejás el precio vacío se usa el precio base del producto.
       </p>
 
       <div className="mt-4 flex flex-col gap-2">
         {variants.map((variant) => (
-          <VariantRow key={variant.id} variant={variant} />
+          <VariantRow
+            key={variant.id}
+            variant={variant}
+            etiquetas={etiquetas}
+          />
         ))}
       </div>
 
-      <NewVariantForm productId={productId} />
+      <NewVariantForm productId={productId} etiquetas={etiquetas} />
     </div>
   );
 }
 
+type Etiquetas = ReturnType<typeof etiquetasDeVariante>;
+
 // --- Fila de una variante existente ---
-function VariantRow({ variant }: { variant: Variant }) {
+function VariantRow({
+  variant,
+  etiquetas,
+}: {
+  variant: Variant;
+  etiquetas: Etiquetas;
+}) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(variant.name);
   const [stock, setStock] = useState(variant.stock.toString());
+  // Vacío = sin precio propio, la variante se vende al precio base.
+  const [price, setPrice] = useState(variant.price_override?.toString() ?? "");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +79,7 @@ function VariantRow({ variant }: { variant: Variant }) {
         id: variant.id,
         name,
         stock: Number(stock) || 0,
-        priceOverride: variant.price_override,
+        priceOverride: price.trim() === "" ? null : Number(price),
       });
       if (result.ok) {
         setSaved(true);
@@ -67,7 +89,7 @@ function VariantRow({ variant }: { variant: Variant }) {
   };
 
   const handleDelete = () => {
-    if (!confirm(`¿Eliminar la variante "${variant.name}"?`)) return;
+    if (!confirm(`¿Eliminar "${variant.name}"?`)) return;
     startTransition(async () => {
       await deleteVariant(variant.id);
     });
@@ -110,7 +132,16 @@ function VariantRow({ variant }: { variant: Variant }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
-        placeholder="Nombre del sabor"
+        placeholder={`Nombre: ${etiquetas.ejemplo}`}
+      />
+      <input
+        type="number"
+        min={0}
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        className="w-28 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        placeholder="Precio base"
+        title="Dejalo vacío para usar el precio base del producto"
       />
       <input
         type="number"
@@ -139,9 +170,16 @@ function VariantRow({ variant }: { variant: Variant }) {
 }
 
 // --- Formulario para agregar una variante nueva ---
-function NewVariantForm({ productId }: { productId: string }) {
+function NewVariantForm({
+  productId,
+  etiquetas,
+}: {
+  productId: string;
+  etiquetas: Etiquetas;
+}) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
 
   const handleAdd = () => {
@@ -151,9 +189,11 @@ function NewVariantForm({ productId }: { productId: string }) {
         productId,
         name,
         stock: Number(stock) || 0,
+        priceOverride: price.trim() === "" ? null : Number(price),
       });
       if (result.ok) {
         setName("");
+        setPrice("");
         setStock("");
       }
     });
@@ -165,7 +205,16 @@ function NewVariantForm({ productId }: { productId: string }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
-        placeholder="Nuevo sabor..."
+        placeholder={`${etiquetas.nueva}: ${etiquetas.ejemplo}`}
+      />
+      <input
+        type="number"
+        min={0}
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        className="w-28 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        placeholder="Precio base"
+        title="Dejalo vacío para usar el precio base del producto"
       />
       <input
         type="number"

@@ -12,8 +12,6 @@ type PageProps = {
 export default async function ProductosPage({ searchParams }: PageProps) {
   const params = await searchParams;
 
-  // Sin ?categoria= esta página es "todo menos vapers". La grilla y el filtro de
-  // marcas comparten el mismo recorte para que no se desincronicen.
   const categoryFilter = {
     categoria: params.categoria,
     excludeCategoria: params.categoria ? undefined : "vapers",

@@ -3,6 +3,7 @@ import {getProductForEdit, getBrandsAndCategories} from "@/lib/queries/admin-pro
 import { ProductForm } from "@/components/admin/product-form";
 import { VariantManager } from "@/components/admin/variant-manager";
 import { ImageManager } from "@/components/admin/image-manager";
+import { usaVariantes } from "@/lib/categorias";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -22,6 +23,17 @@ export default async function EditarProductoPage({ params }: PageProps) {
 
   const puffs = (product.attributes as { puffs?: number })?.puffs ?? null;
 
+  const slugCategoria = categories.find(
+    (c) => c.id === product.category_id
+  )?.slug;
+  const variantesActivas = product.product_variants.filter((v) => v.is_active);
+
+  // Válvula de seguridad: si un producto de una sola presentación quedó con
+  // varias variantes activas (porque le cambiaron la categoría, por ejemplo),
+  // mostramos el gestor igual para que ese stock no quede inalcanzable.
+  const conVariantes =
+    usaVariantes(slugCategoria) || variantesActivas.length > 1;
+
   return (
     <div className="flex flex-col gap-10">
       <ProductForm
@@ -36,13 +48,17 @@ export default async function EditarProductoPage({ params }: PageProps) {
           category_id: product.category_id,
           brandName: product.brands?.name ?? "",
           puffs,
+          stock: variantesActivas[0]?.stock ?? 0,
         }}
       />
 
-      <VariantManager
-        productId={product.id}
-        variants={product.product_variants}
-      />
+      {conVariantes && (
+        <VariantManager
+          productId={product.id}
+          categorySlug={slugCategoria ?? null}
+          variants={product.product_variants}
+        />
+      )}
 
       <ImageManager
         productId={product.id}

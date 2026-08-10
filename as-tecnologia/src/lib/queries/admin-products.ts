@@ -18,7 +18,9 @@ export async function getBrandsAndCategories() {
 
   const [brands, categories] = await Promise.all([
     supabase.from("brands").select("id, name").order("name"),
-    supabase.from("categories").select("id, name").order("name"),
+    // El slug es lo que le permite al formulario decidir si el producto
+    // se carga con variantes (vapers/perfumes) o con un stock único.
+    supabase.from("categories").select("id, name, slug").order("name"),
   ]);
 
   return {

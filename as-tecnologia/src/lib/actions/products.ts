@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/slug";
+import { usaVariantes, VARIANTE_UNICA } from "@/lib/categorias";
 
 export async function toggleProductActive(
   productId: string,
@@ -37,12 +38,24 @@ export async function saveProduct(input: {
   categoryId: string;
   brandName: string;
   puffs: number | null;
+  stock?: number | null; // solo para productos de una sola presentación
 }) {
   const supabase = await createClient();
 
   if (!input.name.trim() || !input.categoryId || !input.brandName.trim()) {
     return { ok: false, error: "Completá nombre, categoría y marca." };
   }
+
+  // El slug lo leemos acá y no lo tomamos del cliente: es lo que decide si
+  // el stock va en una variante oculta o si lo maneja el gestor de variantes.
+  const { data: categoria } = await supabase
+    .from("categories")
+    .select("slug")
+    .eq("id", input.categoryId)
+    .maybeSingle();
+
+  const conVariantes = usaVariantes(categoria?.slug);
+  const stock = Math.max(0, input.stock ?? 0);
 
   const brandResult = await findOrCreateBrandId(supabase, input.brandName);
   if ("error" in brandResult) {
@@ -72,12 +85,42 @@ export async function saveProduct(input: {
     if (error) {
       return { ok: false, error: "No se pudo actualizar el producto." };
     }
-  } else {
-    // ALTA: insert
-    const { error } = await supabase.from("products").insert(productData);
 
-    if (error) {
+    if (!conVariantes) {
+      const sincronizado = await sincronizarVarianteUnica(
+        supabase,
+        input.id,
+        stock
+      );
+      if (!sincronizado.ok) return sincronizado;
+    }
+  } else {
+    // ALTA: insert. Pedimos el id de vuelta porque lo necesitamos para
+    // crearle la variante única a los productos de una sola presentación.
+    const { data: creado, error } = await supabase
+      .from("products")
+      .insert(productData)
+      .select("id")
+      .single();
+
+    if (error || !creado) {
+      console.error("Error al crear producto:", error);
       return { ok: false, error: "No se pudo crear el producto." };
+    }
+
+    if (!conVariantes) {
+      const variante = await addVariant({
+        productId: creado.id,
+        name: VARIANTE_UNICA,
+        stock,
+      });
+
+      if (!variante.ok) {
+        return {
+          ok: false,
+          error: "Se creó el producto pero no se pudo guardar el stock.",
+        };
+      }
     }
   }
 
@@ -120,6 +163,8 @@ export async function addVariant(input: {
   productId: string;
   name: string;
   stock: number;
+  // Opcional: si no viene, la variante se vende al precio base del producto.
+  priceOverride?: number | null;
 }) {
   const supabase = await createClient();
 
@@ -131,6 +176,7 @@ export async function addVariant(input: {
     product_id: input.productId,
     name: input.name.trim(),
     stock: input.stock,
+    price_override: input.priceOverride ?? null,
   });
 
   if (error) {
@@ -189,6 +235,61 @@ export async function restoreVariant(id: string) {
 
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
+  return { ok: true };
+}
+
+// Un producto de una sola presentación guarda su stock en una única variante
+// que el admin nunca ve. Esto la mantiene en sincronía con el formulario.
+async function sincronizarVarianteUnica(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productId: string,
+  stock: number
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: activas, error: readError } = await supabase
+    .from("product_variants")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("is_active", true);
+
+  if (readError || !activas) {
+    console.error("Error al leer las variantes:", readError);
+    return { ok: false, error: "No se pudo leer el stock del producto." };
+  }
+
+  // Más de una variante activa significa que el producto viene de una
+  // categoría con variantes. No tocamos nada: la pantalla de edición
+  // muestra el gestor igual para que ese stock no quede inalcanzable.
+  if (activas.length > 1) {
+    return { ok: true };
+  }
+
+  // Ninguna variante: producto cargado antes de este cambio, o que cambió
+  // de categoría. Le creamos la suya.
+  if (activas.length === 0) {
+    const { error } = await supabase.from("product_variants").insert({
+      product_id: productId,
+      name: VARIANTE_UNICA,
+      stock,
+    });
+
+    if (error) {
+      console.error("Error al crear la variante única:", error);
+      return { ok: false, error: "No se pudo guardar el stock." };
+    }
+
+    return { ok: true };
+  }
+
+  const { error } = await supabase
+    .from("product_variants")
+    .update({ stock })
+    .eq("id", activas[0].id);
+
+  if (error) {
+    console.error("Error al actualizar el stock:", error);
+    return { ok: false, error: "No se pudo guardar el stock." };
+  }
+
   return { ok: true };
 }
 

@@ -90,7 +90,7 @@ export function ImageManager({
           <option value="">Imagen general del producto</option>
           {variants.map((v) => (
             <option key={v.id} value={v.id}>
-              Sabor: {v.name}
+              {v.name}
             </option>
           ))}
         </select>

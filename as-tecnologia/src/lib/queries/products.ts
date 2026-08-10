@@ -67,9 +67,6 @@ export async function searchActiveProducts(term: string) {
     .limit(48);
 }
 
-// Marcas para el <select> del FilterBar. Solo devuelve marcas que tienen al
-// menos un producto comprable en la categoría de la página, así el desplegable
-// nunca ofrece una opción que deja la grilla vacía.
 export async function getBrandsForFilter(
   filters: Pick<ProductFilters, "categoria" | "excludeCategoria"> = {}
 ) {

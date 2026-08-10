@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/format";
 import { useCart } from "@/lib/store/cart";
+import { etiquetasDeVariante, usaVariantes } from "@/lib/categorias";
 
 type Variant = {
   id: string;
@@ -24,6 +25,7 @@ type ProductDetailProps = {
   productId: string;
   name: string;
   brand: string | null;
+  categorySlug: string | null;
   puffs: number | null;
   description: string | null;
   basePrice: number;
@@ -35,15 +37,29 @@ export function ProductDetail({
   productId,
   name,
   brand,
+  categorySlug,
   puffs,
   description,
   basePrice,
   variants,
   images,
 }: ProductDetailProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Si el producto tiene una sola presentación no tiene sentido hacer elegir:
+  // queda seleccionada de entrada y no se muestran los botones.
+  const [selectedId, setSelectedId] = useState<string | null>(
+    variants.length === 1 ? variants[0].id : null
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const addItem = useCart((state) => state.addItem);
+
+  const etiquetas = etiquetasDeVariante(categorySlug);
+
+  // En vapers y perfumes mostramos las opciones aunque haya una sola: saber si
+  // el perfume viene en 50 o en 105 ml es parte de lo que se compra. Los
+  // productos de una sola presentación esconden su variante "Estándar".
+  const mostrarOpciones =
+    variants.length > 1 ||
+    (variants.length === 1 && usaVariantes(categorySlug));
 
   const sortedImages = [...images].sort((a, b) => a.sort_order - b.sort_order);
   const selected = variants.find((v) => v.id === selectedId) ?? null;
@@ -159,39 +175,46 @@ export function ProductDetail({
           <p className="text-sm leading-relaxed text-muted">{description}</p>
         )}
 
-        {/* Selector de sabores */}
-        <div>
-          <p className="mb-2 text-sm font-medium text-muted">Sabor</p>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((variant) => {
-              const isSelected = variant.id === selectedId;
-              const outOfStock = variant.stock === 0;
-
-              return (
-                <button
-                  key={variant.id}
-                  onClick={() => selectVariant(variant)}
-                  disabled={outOfStock}
-                  className={`rounded-full border px-4 py-2 text-sm transition
-                    ${
-                      isSelected
-                        ? "border-primary bg-primary text-white"
-                        : "border-surface-elevated bg-surface-card hover:border-primary-light"
-                    }
-                    ${outOfStock ? "cursor-not-allowed opacity-40 line-through" : ""}
-                  `}
-                >
-                  {variant.name}
-                </button>
-              );
-            })}
-          </div>
-          {selected && selected.stock > 0 && selected.stock <= 3 && (
-            <p className="mt-2 text-sm text-danger">
-              ¡Últimas {selected.stock} unidades!
+        {/* Opciones: sabores en vapers, mililitros en perfumes */}
+        {mostrarOpciones && (
+          <div>
+            <p className="mb-2 text-sm font-medium text-muted">
+              {etiquetas.titulo}
             </p>
-          )}
-        </div>
+            <div className="flex flex-wrap gap-2">
+              {variants.map((variant) => {
+                const isSelected = variant.id === selectedId;
+                const outOfStock = variant.stock === 0;
+
+                return (
+                  <button
+                    key={variant.id}
+                    onClick={() => selectVariant(variant)}
+                    disabled={outOfStock}
+                    className={`rounded-full border px-4 py-2 text-sm transition
+                      ${
+                        isSelected
+                          ? "border-primary bg-primary text-white"
+                          : "border-surface-elevated bg-surface-card hover:border-primary-light"
+                      }
+                      ${outOfStock ? "cursor-not-allowed opacity-40 line-through" : ""}
+                    `}
+                  >
+                    {variant.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Fuera del bloque de opciones: si no, los productos de una sola
+            presentación perderían el aviso de stock bajo. */}
+        {selected && selected.stock > 0 && selected.stock <= 3 && (
+          <p className="text-sm text-danger">
+            ¡Últimas {selected.stock} unidades!
+          </p>
+        )}
 
         {/* Agregar al carrito */}
         <button
@@ -209,7 +232,7 @@ export function ProductDetail({
           disabled={!selected || selected.stock === 0}
           className="rounded-xl bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {selected ? "Agregar al carrito" : "Elegí un sabor"}
+          {selected ? "Agregar al carrito" : etiquetas.cta}
         </button>
       </div>
     </div>
