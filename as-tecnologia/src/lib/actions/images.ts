@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { CATALOG_TAG } from "@/lib/queries/products";
 
 export async function saveProductImage(input: {
   productId: string;
@@ -23,6 +24,7 @@ export async function saveProductImage(input: {
     return { ok: false, error: "No se pudo guardar la imagen." };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath(`/admin/productos/${input.productId}/editar`);
   revalidatePath(`/productos/${input.productId}`);
   revalidatePath("/productos");
@@ -44,6 +46,7 @@ export async function deleteProductImage(id: string, productId: string) {
     return { ok: false, error: "No se pudo eliminar la imagen." };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath(`/admin/productos/${productId}/editar`);
   revalidatePath(`/productos/${productId}`);
   revalidatePath("/productos");

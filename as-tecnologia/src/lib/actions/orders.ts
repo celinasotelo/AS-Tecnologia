@@ -1,7 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+// updateTag y no revalidateTag: updateTag es el que da read-your-own-writes
+// dentro de una Server Action (el cambio se ve al toque, no en el próximo
+// pedido). En Next 16 revalidateTag además exige un segundo argumento.
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { CATALOG_TAG } from "@/lib/queries/products";
 
 type OrderItemInput = {
   variantId: string;
@@ -186,7 +190,10 @@ export async function finalizeOrder(
     }
   }
 
-  // 5. Refrescar el panel y el catálogo público
+  // 5. Refrescar el panel y el catálogo público. El tag es lo que tira el caché
+  //    de datos: al descontar stock, una variante puede quedar en 0 y el
+  //    producto tiene que desaparecer de la grilla (o mostrar "Sin stock").
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/ordenes");
   revalidatePath("/admin/productos");
   revalidatePath("/productos");

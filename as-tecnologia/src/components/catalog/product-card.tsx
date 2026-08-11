@@ -11,9 +11,11 @@ type ProductCardProps = {
     product_variants: { stock: number }[];
     product_images: { url: string; sort_order: number }[];
   };
+
+  priority?: boolean;
 };
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, priority = false }: ProductCardProps) {
   const hasStock = product.product_variants.some((v) => v.stock > 0);
   const mainImage = [...product.product_images].sort(
     (a, b) => a.sort_order - b.sort_order
@@ -32,6 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+            priority={priority}
             className="object-cover transition group-hover:scale-105"
           />
         ) : (
@@ -39,7 +42,6 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </div>
 
-      {/* Info (igual que antes) */}
       <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
         <span className="text-xs uppercase tracking-wide text-muted">
           {product.brands?.name}
@@ -47,8 +49,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <h3 className="text-sm font-medium leading-snug group-hover:text-primary-light">
           {product.name}
         </h3>
-        {/* A dos columnas la tarjeta mide ~164px: el precio y el badge no
-            entran en la misma línea, por eso flex-wrap y precio más chico. */}
+
         <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2">
           <span className="text-base font-bold sm:text-lg">
             {formatPrice(product.base_price)}

@@ -1,7 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+// updateTag y no revalidateTag: updateTag es el que da read-your-own-writes
+// dentro de una Server Action (el cambio se ve al toque, no en el próximo
+// pedido). En Next 16 revalidateTag además exige un segundo argumento.
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { CATALOG_TAG } from "@/lib/queries/products";
 import { slugify } from "@/lib/slug";
 import { usaVariantes, VARIANTE_UNICA } from "@/lib/categorias";
 
@@ -21,6 +25,7 @@ export async function toggleProductActive(
   }
 
   // Refrescar 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   revalidatePath("/");
@@ -124,6 +129,7 @@ export async function saveProduct(input: {
     }
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   revalidatePath("/");
@@ -153,6 +159,7 @@ export async function updateVariant(input: {
     return { ok: false, error: "No se pudo actualizar la variante." };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   return { ok: true };
@@ -183,6 +190,7 @@ export async function addVariant(input: {
     return { ok: false, error: "No se pudo agregar la variante." };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   return { ok: true };
@@ -202,6 +210,7 @@ export async function deleteVariant(id: string) {
     return { ok: false, error: "No se pudo eliminar la variante." };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   return { ok: true };
@@ -233,6 +242,7 @@ export async function restoreVariant(id: string) {
     };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/productos");
   revalidatePath("/productos");
   return { ok: true };
