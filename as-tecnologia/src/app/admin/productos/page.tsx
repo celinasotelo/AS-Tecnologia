@@ -11,7 +11,7 @@ export default async function AdminProductosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Productos</h1>
         <Link
           href="/admin/productos/nuevo"

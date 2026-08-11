@@ -42,12 +42,14 @@ export function FilterBar({
     (showSabor && searchParams.get("sabor"));
 
   return (
+    // En celular cada filtro ocupa el ancho completo y quedan apilados: los
+    // selects toman el ancho de la marca más larga y se salían de la pantalla.
     <div className="flex flex-wrap items-center gap-2">
       {/* Marca */}
       <select
         value={searchParams.get("marca") ?? ""}
         onChange={(e) => setFilter("marca", e.target.value)}
-        className="rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary"
+        className="w-full min-w-0 rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary sm:w-auto"
       >
         <option value="">Todas las marcas</option>
         {brands.map((b) => (
@@ -62,7 +64,7 @@ export function FilterBar({
         <select
           value={searchParams.get("puffs") ?? ""}
           onChange={(e) => setFilter("puffs", e.target.value)}
-          className="rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary"
+          className="w-full min-w-0 rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary sm:w-auto"
         >
           {PUFFS_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -83,7 +85,7 @@ export function FilterBar({
               setFilter("sabor", e.currentTarget.value);
             }
           }}
-          className="rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary"
+          className="w-full min-w-0 rounded-lg border border-surface-elevated bg-surface-card px-3 py-2 text-sm outline-none focus:border-primary sm:w-auto"
         />
       )}
 

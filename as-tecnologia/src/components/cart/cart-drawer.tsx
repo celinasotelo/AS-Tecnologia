@@ -75,9 +75,12 @@ export function CartDrawer() {
           ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
 
-      {/* Panel deslizante */}
+      {/* Panel deslizante.
+          h-dvh y no h-full: en celular la barra de direcciones del navegador
+          aparece y desaparece al scrollear, y con 100% el botón de finalizar
+          compra queda tapado abajo. dvh mide el alto que se ve de verdad. */}
       <aside
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-surface-card shadow-xl transition-transform duration-300
+        className={`fixed right-0 top-0 z-50 flex h-dvh w-full max-w-md flex-col bg-surface-card shadow-xl transition-transform duration-300
           ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header del drawer */}

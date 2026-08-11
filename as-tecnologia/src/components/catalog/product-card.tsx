@@ -40,15 +40,17 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Info (igual que antes) */}
-      <div className="flex flex-1 flex-col gap-1 p-4">
+      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
         <span className="text-xs uppercase tracking-wide text-muted">
           {product.brands?.name}
         </span>
         <h3 className="text-sm font-medium leading-snug group-hover:text-primary-light">
           {product.name}
         </h3>
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-lg font-bold">
+        {/* A dos columnas la tarjeta mide ~164px: el precio y el badge no
+            entran en la misma línea, por eso flex-wrap y precio más chico. */}
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2">
+          <span className="text-base font-bold sm:text-lg">
             {formatPrice(product.base_price)}
           </span>
           {!hasStock && (

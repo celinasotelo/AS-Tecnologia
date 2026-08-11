@@ -84,16 +84,19 @@ export function OrderRow({ order }: { order: Order }) {
         </div>
       </div>
 
-      {/* Items */}
+      {/* Items. gap-3 + shrink-0 en el precio: sin eso un nombre largo de
+          producto le come el ancho y lo parte en dos renglones. */}
       <ul className="mt-3 space-y-1 border-t border-surface-elevated pt-3 text-sm">
         {order.order_items.map((item, i) => (
-          <li key={i} className="flex justify-between text-muted">
-            <span>
+          <li key={i} className="flex justify-between gap-3 text-muted">
+            <span className="min-w-0">
               {item.quantity}x {item.product_variants?.products?.name}
               {" — "}
               {item.product_variants?.name}
             </span>
-            <span>{formatPrice(item.unit_price * item.quantity)}</span>
+            <span className="shrink-0">
+              {formatPrice(item.unit_price * item.quantity)}
+            </span>
           </li>
         ))}
       </ul>

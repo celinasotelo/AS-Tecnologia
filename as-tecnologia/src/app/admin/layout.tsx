@@ -19,7 +19,9 @@ export default async function AdminLayout({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <header className="mb-6 flex items-center justify-between border-b border-surface-elevated pb-4">
+      {/* flex-wrap: los tres links más "Cerrar sesión" no entran juntos en un
+          celular angosto, así que ahí el botón baja a un segundo renglón. */}
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-surface-elevated pb-4">
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/admin" className="font-bold">
             Panel

@@ -127,11 +127,14 @@ function VariantRow({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-surface-card p-2">
+    // En celular la fila se parte en dos renglones: el nombre ocupa todo el
+    // ancho arriba y los campos cortos van abajo. Los cinco en una sola línea
+    // necesitan 331px fijos y en un celular de 360px hay 312px.
+    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-card p-2">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        className="w-full min-w-0 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary sm:w-auto sm:flex-1"
         placeholder={`Nombre: ${etiquetas.ejemplo}`}
       />
       <input
@@ -139,7 +142,7 @@ function VariantRow({
         min={0}
         value={price}
         onChange={(e) => setPrice(e.target.value)}
-        className="w-28 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        className="min-w-0 flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary sm:w-28 sm:flex-none"
         placeholder="Precio base"
         title="Dejalo vacío para usar el precio base del producto"
       />
@@ -147,20 +150,20 @@ function VariantRow({
         type="number"
         value={stock}
         onChange={(e) => setStock(e.target.value)}
-        className="w-20 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        className="w-20 min-w-0 flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary sm:flex-none"
         placeholder="Stock"
       />
       <button
         onClick={handleSave}
         disabled={isPending}
-        className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-primary-light disabled:opacity-50"
+        className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-primary-light disabled:opacity-50"
       >
         {saved ? "✓" : isPending ? "..." : "Guardar"}
       </button>
       <button
         onClick={handleDelete}
         disabled={isPending}
-        className="rounded-md p-1.5 text-muted transition hover:text-danger disabled:opacity-50"
+        className="shrink-0 rounded-md p-1.5 text-muted transition hover:text-danger disabled:opacity-50"
         aria-label="Eliminar variante"
       >
         <Trash2 size={16} />
@@ -200,11 +203,13 @@ function NewVariantForm({
   };
 
   return (
-    <div className="mt-3 flex items-center gap-2 rounded-lg border border-dashed border-surface-elevated p-2">
+    // Mismo criterio que la fila de arriba: en celular el nombre va solo en
+    // el primer renglón y precio/stock/botón abajo.
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-surface-elevated p-2">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        className="w-full min-w-0 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary sm:w-auto sm:flex-1"
         placeholder={`${etiquetas.nueva}: ${etiquetas.ejemplo}`}
       />
       <input
@@ -212,7 +217,7 @@ function NewVariantForm({
         min={0}
         value={price}
         onChange={(e) => setPrice(e.target.value)}
-        className="w-28 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        className="min-w-0 flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary sm:w-28 sm:flex-none"
         placeholder="Precio base"
         title="Dejalo vacío para usar el precio base del producto"
       />
@@ -220,13 +225,13 @@ function NewVariantForm({
         type="number"
         value={stock}
         onChange={(e) => setStock(e.target.value)}
-        className="w-20 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        className="w-20 min-w-0 flex-1 rounded-md border border-surface-elevated bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary sm:flex-none"
         placeholder="Stock"
       />
       <button
         onClick={handleAdd}
         disabled={isPending || !name.trim()}
-        className="flex items-center gap-1 rounded-md bg-success/20 px-3 py-1.5 text-sm font-medium text-success transition hover:bg-success/30 disabled:opacity-50"
+        className="flex shrink-0 items-center gap-1 rounded-md bg-success/20 px-3 py-1.5 text-sm font-medium text-success transition hover:bg-success/30 disabled:opacity-50"
       >
         <Plus size={16} />
         Agregar

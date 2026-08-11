@@ -64,6 +64,22 @@ body {
   color: var(--color-foreground);
 }
 
+/* ===== Zoom automático de iOS en los formularios =====
+   Safari en iPhone hace zoom solo al enfocar un input de menos de 16px, y no
+   lo deshace al salir: quedás con la página agrandada y scrolleando de costado.
+   Todos nuestros campos usan text-sm (14px), así que abajo del breakpoint sm
+   los subimos al mínimo que evita ese zoom. De 640px para arriba mandan las
+   clases de Tailwind como siempre.
+   Va con !important porque una clase (.text-sm) le gana en especificidad a un
+   selector de elemento (input), así que sin esto la regla no se aplicaría. */
+@media (width < 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ===== Elementos que existen por duplicado, uno por tema =====
    Lo usa el logo del header: se renderizan las dos imágenes y el CSS muestra
    la que corresponde, sin JavaScript ni parpadeo.

@@ -86,7 +86,9 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* Una columna en celular: dos campos a la par quedan de ~140px cada
+            uno y no se lee lo que estás escribiendo. */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Marca">
             <input
               list="brands-list"
@@ -118,7 +120,7 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Precio base (ARS)">
             <input
               type="number"

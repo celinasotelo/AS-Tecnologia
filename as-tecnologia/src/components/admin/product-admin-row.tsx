@@ -48,7 +48,7 @@ export function ProductAdminRow({ product }: { product: Product }) {
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="font-semibold">{product.name}</p>
           <p className="text-sm text-muted">
             {product.brands?.name}
@@ -56,7 +56,9 @@ export function ProductAdminRow({ product }: { product: Product }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* En celular el precio y los dos botones tampoco entran juntos:
+            flex-wrap deja que Editar baje si hace falta. */}
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="text-right">
             <p className="font-semibold">{formatPrice(product.base_price)}</p>
             <p className="text-xs text-muted">Stock total: {totalStock}</p>
