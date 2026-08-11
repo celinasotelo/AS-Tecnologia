@@ -23,6 +23,11 @@
   /* Estados */
   --color-success: #22c55e;        /* "en stock" */
   --color-danger: #ef4444;         /* "sin stock", errores */
+
+  /* Borde de las cards. En oscuro va transparente porque la card ya se recorta
+     sola contra el fondo casi negro. Dejamos el 1px igual en los dos temas para
+     que la grilla no se mueva al togglear el modo. */
+  --color-border: transparent;
 }
 
 /* ===== Modo claro =====
@@ -42,6 +47,11 @@
      contraste, ilegibles. Estos superan 4.5:1. */
   --color-success: #15803d;
   --color-danger: #dc2626;
+
+  /* Acá sí hace falta: la card es blanca pura sobre un fondo casi blanco, sin
+     línea no se distingue dónde termina una y empieza la otra. Es un poco más
+     oscuro que --color-surface-elevated para que siga viéndose en el hover. */
+  --color-border: #b3bac9;
 }
 
 /* El azul de marca (--color-primary y --color-primary-light) NO cambia entre
