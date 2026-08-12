@@ -9,7 +9,7 @@ Purpose & context
 
 Celina is building a full-stack e-commerce web application called AS Tecnología — a store selling vapers, perfumes, and related products based in Corrientes, Argentina. The project is a solo development effort assisted by Claude, to understand each file and decision rather than receiving a black-box implementation. The goal is a functioning storefront with a WhatsApp-based checkout flow for the initial phase, with Mercado Pago as a future payment integration.
 
-Tech stack: Next.js 15 (App Router), Supabase (PostgreSQL + Auth + Storage + RLS), TypeScript, Tailwind CSS v4, Zustand for cart state, Vercel for deployment.
+Tech stack: Next.js 16 (App Router), Supabase (PostgreSQL + Auth + Storage + RLS), TypeScript, Tailwind CSS v4, Zustand for cart state, Vercel for deployment.
 
 Database model: Seven tables — categories, brands, products, product_variants, product_images, orders, order_items. The product/variant architecture stores flavors and colors of the same model as sibling variants, which cleanly supports showing "other available flavors of the same model" in the product detail view.
 
@@ -27,7 +27,7 @@ The application has been built through all major phases:
 ✅ Zustand cart store with localStorage persistence (persist middleware)
 ✅ Sliding cart drawer with quantity controls
 ✅ WhatsApp checkout flow persisting orders to Supabase before opening the messaging link
-✅ Admin panel: Supabase Auth login, middleware session refresh, protected routes via layout guardian using getUser()
+✅ Admin panel: Supabase Auth login, proxy session refresh (src/proxy.ts), protected routes via layout guardian using getUser()
 ✅ Admin orders list with secure RLS policies
 ✅ Product ABM (alta/baja/modificación): activate/deactivate, create/edit form reusing one component via optional initial prop
 ✅ Variant manager: per-row stock editing, adding new variants, soft-delete (always deactivates rather than hard-deletes to preserve order history integrity)
@@ -61,7 +61,7 @@ Project documentation lives in CLAUDE.md (stack, conventions, phase roadmap) and
 Tools & resources
 
 Supabase — PostgreSQL, Auth, Storage, RLS
-Next.js 15 App Router + TypeScript
+Next.js 16 App Router + TypeScript
 Tailwind CSS v4 with @theme syntax in globals.css
 Zustand with persist middleware
 Vercel for deployment
