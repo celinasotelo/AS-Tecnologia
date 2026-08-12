@@ -6,6 +6,12 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CATALOG_TAG } from "@/lib/queries/products";
+import {
+  isDeliveryMethod,
+  isPaymentMethod,
+  type DeliveryMethod,
+  type PaymentMethod,
+} from "@/lib/checkout";
 
 type OrderItemInput = {
   variantId: string;
@@ -15,11 +21,24 @@ type OrderItemInput = {
 type CreateOrderInput = {
   customerName: string;
   customerPhone: string;
+  deliveryMethod: DeliveryMethod;
+  paymentMethod: PaymentMethod;
+  // Solo cuando deliveryMethod es "delivery".
+  deliveryAddress?: string;
+  deliveryNotes?: string;
   items: OrderItemInput[];
 };
 
 type CreateOrderResult =
-  | { ok: true; orderId: string; total: number }
+  | {
+      ok: true;
+      orderId: string;
+      total: number;
+      // variantId -> precio unitario que usó el servidor. El cliente lo necesita
+      // para armar el mensaje de WhatsApp con los mismos números que se
+      // guardaron, y no con los que tenía cacheados en el carrito.
+      prices: Record<string, number>;
+    }
   | { ok: false; error: string };
 
 export async function createOrder(
@@ -27,66 +46,107 @@ export async function createOrder(
 ): Promise<CreateOrderResult> {
   const supabase = await createClient();
 
+  // 1. Validar lo que llegó.
+  //
+  //    El wizard ya valida para darle feedback al usuario mientras completa,
+  //    pero esto no es una repetición al pedo: una server action es un endpoint
+  //    público, cualquiera puede llamarla con lo que quiera. La validación del
+  //    cliente es comodidad; esta es la que manda.
   if (input.items.length === 0) {
     return { ok: false, error: "El carrito está vacío." };
   }
 
-  // 1. Traer los precios REALES desde la DB
-  const variantIds = input.items.map((i) => i.variantId);
-  const { data: variants, error: variantsError } = await supabase
-    .from("product_variants")
-    .select("id, price_override, stock, products(base_price)")
-    .in("id", variantIds);
+  const customerName = input.customerName.trim();
+  const customerPhone = input.customerPhone.trim();
 
-  if (variantsError || !variants) {
-    console.error("Error al leer variantes:", variantsError);
-    return { ok: false, error: "No se pudieron verificar los productos." };
+  if (!customerName || !customerPhone) {
+    return { ok: false, error: "Completá tu nombre y teléfono." };
   }
 
-  // 2. Calcular el total en el servidor
-  let total = 0;
-  const orderItems = input.items.map((item) => {
-    const variant = variants.find((v) => v.id === item.variantId);
-    if (!variant) {
-      throw new Error(`Variante no encontrada: ${item.variantId}`);
-    }
-    const unitPrice = variant.price_override ?? variant.products.base_price;
-    total += unitPrice * item.quantity;
-    return {
+  if (!isDeliveryMethod(input.deliveryMethod)) {
+    return { ok: false, error: "Elegí cómo querés recibir el pedido." };
+  }
+
+  if (!isPaymentMethod(input.paymentMethod)) {
+    return { ok: false, error: "Elegí cómo querés pagar." };
+  }
+
+  // En retiro la dirección se descarta aunque venga: el pedido no se envía a
+  // ningún lado y guardarla solo confundiría al que lea la orden en el panel.
+  const isDelivery = input.deliveryMethod === "delivery";
+  const deliveryAddress = isDelivery ? (input.deliveryAddress ?? "").trim() : "";
+  const deliveryNotes = isDelivery ? (input.deliveryNotes ?? "").trim() : "";
+
+  if (isDelivery && !deliveryAddress) {
+    return { ok: false, error: "Ingresá la dirección de entrega." };
+  }
+
+  // 2. Guardar el pedido, todo adentro de la función create_order().
+  //
+  //    El rol anónimo NO tiene ninguna política sobre orders ni order_items:
+  //    no puede insertar, leer ni modificar nada. Lo único que puede hacer es
+  //    ejecutar esta función, que corre con security definer (o sea, con los
+  //    permisos de quien la creó) y por eso sí puede escribir.
+  //
+  //    Eso cambia dónde está la frontera de seguridad. Antes cualquiera con la
+  //    clave anónima —que viaja en el navegador y es pública por diseño— podía
+  //    postear órdenes directo a la API con el total que se le antojara. Ahora
+  //    el único camino de escritura es esta función, que valida los datos y
+  //    calcula el total ella misma leyendo los precios de la base.
+  //
+  //    De paso resuelve otras dos cosas:
+  //    - Atomicidad: el cuerpo de una función es una sola transacción, así que
+  //      nunca más queda una orden guardada sin sus productos.
+  //    - Latencia: un viaje a Supabase en vez de tres (~250 ms en lugar de
+  //      ~750). En el botón más importante del sitio, se nota.
+  const { data, error } = await supabase.rpc("create_order", {
+    p_customer_name: customerName,
+    p_customer_phone: customerPhone,
+    p_delivery_method: input.deliveryMethod,
+    p_payment_method: input.paymentMethod,
+    p_delivery_address: deliveryAddress,
+    p_delivery_notes: deliveryNotes,
+    p_items: input.items.map((item) => ({
       variant_id: item.variantId,
       quantity: item.quantity,
-      unit_price: unitPrice,
-    };
+    })),
   });
 
-  // 3. Crear la orden
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      customer_name: input.customerName,
-      customer_phone: input.customerPhone,
-      status: "pending_whatsapp",
-      total,
-    })
-    .select("id")
-    .single();
+  if (error) {
+    console.error("Error al crear la orden:", error);
+    // P0001 es el código que Postgres le pone a los `raise exception` nuestros,
+    // y esos mensajes están escritos para que los lea un cliente ("Alguno de
+    // los productos ya no está disponible"). Cualquier otro código es un
+    // problema interno: se registra en el servidor y afuera va algo genérico.
+    return {
+      ok: false,
+      error:
+        error.code === "P0001" ? error.message : "No se pudo crear la orden.",
+    };
+  }
 
-  if (orderError || !order) {
-    console.error("Error al crear orden:", orderError);
+  // La función devuelve jsonb, que del lado de TypeScript llega como Json. El
+  // cast dice qué forma tiene: es un contrato con el SQL, no una verificación.
+  const result = data as {
+    order_id: string;
+    total: number;
+    prices: Record<string, number>;
+  } | null;
+
+  if (!result) {
+    console.error("create_order no devolvió datos.");
     return { ok: false, error: "No se pudo crear la orden." };
   }
 
-  // 4. Crear los items
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    orderItems.map((item) => ({ ...item, order_id: order.id }))
-  );
+  // El pedido tiene que aparecerle al dueño ya mismo, no en el próximo fetch.
+  revalidatePath("/admin/ordenes");
 
-  if (itemsError) {
-    console.error("Error al crear items:", itemsError);
-    return { ok: false, error: "No se pudieron guardar los productos." };
-  }
-
-  return { ok: true, orderId: order.id, total };
+  return {
+    ok: true,
+    orderId: result.order_id,
+    total: result.total,
+    prices: result.prices,
+  };
 }
 
 type OrderActionResult = { ok: true } | { ok: false; error: string };

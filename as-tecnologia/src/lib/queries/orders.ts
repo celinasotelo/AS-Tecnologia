@@ -7,6 +7,7 @@ export async function getOrders() {
     .from("orders")
     .select(
       `id, customer_name, customer_phone, status, total, created_at,
+       delivery_method, payment_method, delivery_address, delivery_notes,
        order_items(quantity, unit_price,
          product_variants(name, products(name)))`
     )

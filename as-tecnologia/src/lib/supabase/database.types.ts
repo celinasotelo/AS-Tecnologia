@@ -94,7 +94,11 @@ export type Database = {
           created_at: string
           customer_name: string
           customer_phone: string
+          delivery_address: string | null
+          delivery_method: string
+          delivery_notes: string | null
           id: string
+          payment_method: string
           status: string
           total: number
           user_id: string | null
@@ -103,7 +107,11 @@ export type Database = {
           created_at?: string
           customer_name: string
           customer_phone: string
+          delivery_address?: string | null
+          delivery_method?: string
+          delivery_notes?: string | null
           id?: string
+          payment_method?: string
           status?: string
           total: number
           user_id?: string | null
@@ -112,7 +120,11 @@ export type Database = {
           created_at?: string
           customer_name?: string
           customer_phone?: string
+          delivery_address?: string | null
+          delivery_method?: string
+          delivery_notes?: string | null
           id?: string
+          payment_method?: string
           status?: string
           total?: number
           user_id?: string | null
@@ -252,7 +264,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_order: {
+        Args: {
+          p_customer_name: string
+          p_customer_phone: string
+          p_delivery_method: string
+          p_payment_method: string
+          p_delivery_address: string
+          p_delivery_notes: string
+          p_items: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

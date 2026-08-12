@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveProduct } from "@/lib/actions/products";
 import { CATEGORIA_VAPERS, usaVariantes } from "@/lib/categorias";
+import { inputClass, Field } from "@/components/ui/field";
 
 type Option = { id: string; name: string };
 type CategoryOption = Option & { slug: string };
@@ -201,25 +202,5 @@ export function ProductForm({ brands, categories, initial }: ProductFormProps) {
         </div>
       </div>
     </div>
-  );
-}
-
-// Estilo compartido de los inputs
-const inputClass =
-  "rounded-lg border border-surface-elevated bg-surface px-3 py-2 text-sm outline-none focus:border-primary w-full";
-
-// Componentito para etiqueta + campo
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-sm font-medium text-muted">{label}</span>
-      {children}
-    </label>
   );
 }
