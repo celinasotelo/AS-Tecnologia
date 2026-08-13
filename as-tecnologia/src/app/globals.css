@@ -37,26 +37,43 @@
    cambia todas las clases de una. Si algún día migrás a @theme inline, el
    valor se incrusta en cada clase y este bloque deja de tener efecto. */
 :root[data-theme="light"] {
-  --color-surface: #f5f7fb;          /* blanco azulado, no blanco puro */
-  --color-surface-card: #ffffff;
-  --color-surface-elevated: #dfe5f2; /* bordes y hovers */
+  /* El fondo NO es blanco: es el azul del logo (#052391, hue 227°) llevado a
+     92% de luminosidad y bajado de saturación. Dos motivos:
+     1. Un fondo casi blanco a pantalla completa cansa la vista.
+     2. Si el fondo es blanco y la card también, no hay jerarquía: las cards se
+        funden con la página y la separación depende sólo del borde de 1px.
+     Con el fondo teñido, la card blanca flota sola y el borde pasa a ser un
+     detalle, no la única pista visual. */
+  --color-surface: #e7ecf6;
+  --color-surface-card: #ffffff;     /* blanco puro: acá sí se recorta */
+  --color-surface-elevated: #dae1f1; /* bordes suaves, hovers, fondo de fotos */
   --color-foreground: #0d2a4d;       /* navy de marca como color de texto */
-  --color-muted: #5a6785;
+  --color-muted: #55617f;            /* 5.2:1 sobre el fondo nuevo */
 
   /* Los de arriba (#8b95b3 y #22c55e) sobre blanco quedan en ~2.3:1 de
      contraste, ilegibles. Estos superan 4.5:1. */
   --color-success: #15803d;
   --color-danger: #dc2626;
 
-  /* Acá sí hace falta: la card es blanca pura sobre un fondo casi blanco, sin
-     línea no se distingue dónde termina una y empieza la otra. Es un poco más
-     oscuro que --color-surface-elevated para que siga viéndose en el hover. */
-  --color-border: #b3bac9;
+  /* Ya no carga con toda la separación (de eso se ocupa el fondo), así que
+     puede ser más suave y sólo definir el canto de la card. */
+  --color-border: #c6cfe4;
 }
 
-/* El azul de marca (--color-primary y --color-primary-light) NO cambia entre
-   temas: funciona sobre fondo claro y oscuro, por eso los botones azules con
-   texto blanco siguen sirviendo tal cual en los dos modos. */
+/* ===== El azul de marca sí cambia entre temas =====
+   El azul exacto de los logos es #052391 (muestreado de los PNG de
+   /brand-assets). Sobre fondo claro es perfecto: 12.7:1 con texto blanco
+   encima. Sobre el fondo oscuro (#0a0e1a) daría 1.5:1, o sea invisible.
+   Por eso el modo oscuro usa la versión aclarada (#1e3d9e, la del logo
+   circular) y el modo claro usa el color literal del logo.
+   --color-primary-light también se oscurece acá porque no se usa sólo como
+   hover de botón: aparece mucho como TEXTO (text-primary-light,
+   hover:text-primary-light). El #3b5fd9 del modo oscuro sobre este fondo
+   quedaba en 4.6:1, al límite; #2f52d1 llega a 5.5:1. */
+:root[data-theme="light"] {
+  --color-primary: #052391;
+  --color-primary-light: #2f52d1;
+}
 
 /* Avisa al navegador de qué tema se trata, para que las barras de scroll y los
    controles nativos (selects, date pickers) acompañen en vez de quedar claros
@@ -90,12 +107,6 @@ body {
   }
 }
 
-/* ===== Elementos que existen por duplicado, uno por tema =====
-   Lo usa el logo del header: se renderizan las dos imágenes y el CSS muestra
-   la que corresponde, sin JavaScript ni parpadeo.
-   El orden importa: .only-light arranca oculto y sólo se muestra en claro. Al
-   revés (ocultar .only-dark bajo [data-theme="dark"]) se verían los dos logos
-   juntos si el atributo llegara a faltar. */
 .only-light {
   display: none;
 }
