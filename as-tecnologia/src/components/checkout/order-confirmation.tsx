@@ -24,27 +24,15 @@ export type OrderSnapshot = {
 
 type Props = {
   order: OrderSnapshot;
-  // true solo cuando la orden se acaba de crear. Al recuperar la pantalla de
-  // sessionStorage queda en false, así un refresh no vuelve a abrir WhatsApp.
-  autoOpen: boolean;
 };
 
-export function OrderConfirmation({ order, autoOpen }: Props) {
+// Esta pantalla no abre WhatsApp: para cuando se monta, el await a createOrder
+// ya se comió el permiso del navegador para abrir pestañas. De abrirlo se
+// encarga handleConfirm en checkout-wizard, que sí corre dentro del click.
+// Acá el <a> de abajo es el respaldo (y la forma de volver a escribirnos).
+export function OrderConfirmation({ order }: Props) {
   const isDelivery = order.deliveryMethod === "delivery";
   const isTransfer = order.paymentMethod === "transfer";
-
-  // Intento de abrir WhatsApp solo, una vez.
-  //
-  // El camino real es que el usuario toque el botón de abajo: este open corre
-  // dentro de un efecto, o sea fuera del gesto del usuario, y Safari en iPhone
-  // y varios bloqueadores lo cancelan. Cuando pasa, no se pierde nada — el
-  // botón queda ahí. Cuando funciona, el cliente se ahorra un toque.
-  const alreadyOpened = useRef(false);
-  useEffect(() => {
-    if (!autoOpen || alreadyOpened.current) return;
-    alreadyOpened.current = true;
-    window.open(order.whatsappUrl, "_blank", "noopener,noreferrer");
-  }, [autoOpen, order.whatsappUrl]);
 
   return (
     <div className="flex flex-col gap-6">

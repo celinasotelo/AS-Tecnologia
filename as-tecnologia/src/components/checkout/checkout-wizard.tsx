@@ -118,6 +118,17 @@ export function CheckoutWizard() {
     const address = isDelivery ? composeAddress(calle, numero, pisoDepto, barrio) : "";
     const notes = isDelivery ? referencia.trim() : "";
 
+    const waWindow = window.open("", "_blank");
+
+    if (waWindow) {
+      waWindow.opener = null;
+      if (waWindow.document.body) {
+        waWindow.document.body.style.cssText =
+          "font-family:system-ui,sans-serif;padding:2rem;color:#555";
+        waWindow.document.body.textContent = "Abriendo WhatsApp…";
+      }
+    }
+
     startTransition(async () => {
       const result = await createOrder({
         customerName: nombre.trim(),
@@ -133,6 +144,8 @@ export function CheckoutWizard() {
       });
 
       if (!result.ok) {
+        // No hay pedido que mandar: cerramos la pestaña que abrimos de más.
+        waWindow?.close();
         setError(result.error);
         return;
       }
@@ -157,14 +170,13 @@ export function CheckoutWizard() {
         }),
       };
 
-      // El link de WhatsApp se arma ANTES de vaciar el carrito: necesita los
-      // nombres de los productos, que solo están en los items.
+      if (waWindow && !waWindow.closed) {
+        waWindow.location.replace(snapshot.whatsappUrl);
+      }
+
       try {
         sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
       } catch {
-        // Modo incógnito con storage bloqueado. El pedido ya está guardado y la
-        // pantalla se dibuja igual; lo único que se pierde es aguantar un
-        // refresh.
       }
 
       setOrder(snapshot);
@@ -172,18 +184,11 @@ export function CheckoutWizard() {
     });
   };
 
-  // --- Render ---------------------------------------------------------------
 
-  // Habiendo pedido, no hay wizard: se muestra la confirmación.
-  // autoOpen solo cuando el pedido es de recién (order, y no storedOrder), así
-  // un refresh de esta pantalla no vuelve a abrir WhatsApp.
   if (activeOrder) {
-    return <OrderConfirmation order={activeOrder} autoOpen={order !== null} />;
+    return <OrderConfirmation order={activeOrder} />;
   }
 
-  // Mientras zustand lee localStorage no sabemos si hay carrito. Un placeholder
-  // neutro evita mostrar "está vacío" un instante y que después aparezcan los
-  // productos.
   if (!hydrated) {
     return <div className="h-64 animate-pulse rounded-xl bg-surface-card" />;
   }
@@ -227,9 +232,6 @@ export function CheckoutWizard() {
         <section className="flex flex-col gap-4">
           <h1 className="text-2xl font-bold">¿Cómo querés recibir el pedido?</h1>
 
-          {/* El link a Maps va FUERA de la card y no adentro: un <button> no
-              puede contener un <a> (HTML inválido), y además tocar el link
-              dispararía también el onClick de la card y te saltearía el paso. */}
           <div className="flex flex-col gap-2">
             <OptionCard
               icon={<Store size={24} />}
@@ -446,21 +448,6 @@ export function CheckoutWizard() {
   );
 }
 
-// --- Lectura del último pedido ----------------------------------------------
-//
-// useSyncExternalStore es el mismo hook que usa el carrito para la hidratación:
-// le explicás a React cómo leer un dato que vive fuera de React (acá,
-// sessionStorage) y él se ocupa de que el servidor y el cliente no se peleen.
-// El tercer argumento es lo que se usa para el HTML del servidor, donde
-// sessionStorage no existe.
-//
-// Se hace así y no con un useEffect + setState porque eso dispara un segundo
-// render en cascada apenas monta la pantalla (y el linter lo marca como error).
-
-// El caché de estas dos variables NO es una optimización, es obligatorio: React
-// compara el resultado de readStoredOrder con Object.is en cada render, y un
-// JSON.parse devuelve un objeto nuevo cada vez. Sin caché, React vería que
-// "cambió" siempre y renderizaría en loop infinito.
 let cachedRaw: string | null = null;
 let cachedOrder: OrderSnapshot | null = null;
 
@@ -477,8 +464,6 @@ function readStoredOrder(): OrderSnapshot | null {
   return cachedOrder;
 }
 
-// sessionStorage no cambia solo mientras la pantalla está abierta: no hay nada
-// a qué suscribirse, así que devolvemos una función de baja que no hace nada.
 const subscribeToStoredOrder = () => () => {};
 
 const noStoredOrderOnServer = () => null;
@@ -491,10 +476,6 @@ function useStoredOrder(): OrderSnapshot | null {
   );
 }
 
-// --- Piezas del wizard -------------------------------------------------------
-
-// Arma la dirección en una sola línea, que es como se guarda en la DB y como la
-// lee el dueño en el panel. Los campos vacíos no dejan comas colgando.
 function composeAddress(
   calle: string,
   numero: string,
@@ -514,8 +495,7 @@ function StepIndicator({
   step: Step;
   isDelivery: boolean;
 }) {
-  // La pantalla de dirección solo existe en el camino del envío, así que el
-  // indicador tiene 3 o 4 pasos según lo que el cliente haya elegido.
+
   const steps: { key: Step; label: string }[] = [
     { key: "entrega", label: "Entrega" },
     ...(isDelivery
@@ -549,10 +529,6 @@ function StepIndicator({
   );
 }
 
-// Card grande y clickeable para elegir entrega o pago.
-//
-// Es un <button> y no un <div onClick>: así se puede llegar con Tab, se activa
-// con Enter y los lectores de pantalla lo anuncian como algo que se toca.
 function OptionCard({
   icon,
   title,
